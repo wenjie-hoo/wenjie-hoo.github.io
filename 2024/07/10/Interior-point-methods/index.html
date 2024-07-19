@@ -7,15 +7,15 @@
 <meta name="full-screen" content="yes">
 <meta name="theme-color" content="#317EFB" />
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0" name="viewport">
-<meta name="description" content="upcoming…">
+<meta name="description" content="Problem 1Assume the linear model:$$ Y &#x3D; X \beta + \epsilon$$where $X’X&#x3D;I$ and $\epsilon \sim N(0,\sigma^2I)$Find the numerical solution for the elastic net in the form:$$\hat{\beta_{en}} &amp;#x">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linear Programming - Interior-Point Methods">
 <meta property="og:url" content="http://example.com/2024/07/10/Interior-point-methods/index.html">
 <meta property="og:site_name" content="Clark&#39;s Blog">
-<meta property="og:description" content="upcoming…">
+<meta property="og:description" content="Problem 1Assume the linear model:$$ Y &#x3D; X \beta + \epsilon$$where $X’X&#x3D;I$ and $\epsilon \sim N(0,\sigma^2I)$Find the numerical solution for the elastic net in the form:$$\hat{\beta_{en}} &amp;#x">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2024-07-09T22:34:53.000Z">
-<meta property="article:modified_time" content="2024-07-13T12:43:19.178Z">
+<meta property="article:modified_time" content="2024-07-16T10:11:29.070Z">
 <meta property="article:author" content="Clark">
 <meta property="article:tag" content="math">
 <meta name="twitter:card" content="summary">
@@ -48,8 +48,6 @@
 
     
     
-<link rel="stylesheet" href="https://unpkg.com/katex@latest/dist/katex.min.css">
-
 
 
 
@@ -64,7 +62,7 @@
 
 <!-- Variable -->
 <script>window.ASYNC_CONFIG = {"hostname":"example.com","author":"Clark","root":"/","typed_text":["今天的天氣怎麼樣？"],"theme_version":"0.0.0","theme":{"switch":true,"default":"auto"},"favicon":{"logo":"/img/favicon.png","icon16":"/img/favicon.ico","icon32":"/img/favicon.ico","apple_touch_icon":null,"webmanifest":null,"visibilitychange":true,"hidden":"/img/favicon.png","show_text":"(/≧▽≦/)Hey! Good again!","hide_text":"(●—●)Oh, crash!"},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms","author":"Post author: ","copyright_link":"Post link: ","copyright_license_title":"Copyright Notice: ","copyright_license_content":"All articles in this blog are licensed under undefined unless otherwise stated.","copy_success":"Copied","copy_failure":"Copy failed","open_read_mode":"Enter reading mode","exit_read_mode":"Exit reading mode","notice_outdate_message":"It has been undefined days since the last update, the content of the article may be outdated.","sticky":"TOP","just":"Just","min":"minutes ago","hour":"hours ago","day":"days ago","month":"months ago"},"swup":false,"plugin":{"flickr_justified_gallery":"https://unpkg.com/flickr-justified-gallery@latest/dist/fjGallery.min.js"},"icons":{"sun":"far fa-sun","moon":"far fa-moon","play":"fas fa-play","email":"far fa-envelope","next":"fas fa-arrow-right","calendar":"far fa-calendar-alt","clock":"far fa-clock","user":"far fa-user","back_top":"fas fa-arrow-up","close":"fas fa-times","search":"fas fa-search","reward":"fas fa-hand-holding-usd","user_tag":"fas fa-user-alt","toc_tag":"fas fa-th-list","read":"fas fa-book-reader","arrows":"fas fa-arrows-alt-h","double_arrows":"fas fa-angle-double-down","copy":"fas fa-copy"},"icontype":"font","highlight":{"plugin":"highlighjs","theme":true,"copy":true,"lang":true,"title":"default","height_limit":false},"toc":{"post_title":true},"live_time":{"start_time":"07/01/2024 00:00:00","prefix":"The blog has been lovely to run undefined day"},"danmu":{"enable":false,"el":".trm-banner"},"search":{"enable":true,"type":"local","href":"https://www.google.com/search?q=site:","domain":null,"path":"search.json"}};</script>
-<script id="async-page-config">window.PAGE_CONFIG = {"isPost":true,"isHome":false,"postUpdate":"2024-07-13 14:43:19"};</script>
+<script id="async-page-config">window.PAGE_CONFIG = {"isPost":true,"isHome":false,"postUpdate":"2024-07-16 12:11:29"};</script>
 
 <!-- Theme mode css -->
 <link data-swup-theme rel="stylesheet" href="/css/index.css?v=0.0.0" id="trm-switch-style">
@@ -327,7 +325,12 @@
 </div>
 <div class="trm-card ">
     <article id="article-container" class="trm-publication">
-    <p>upcoming…</p>
+    <h3 id="Problem-1"><a href="#Problem-1" class="headerlink" title="Problem 1"></a>Problem 1</h3><p><strong>Assume the linear model:</strong><br>$$ Y &#x3D; X \beta + \epsilon$$<br>where $X’X&#x3D;I$ and $\epsilon \sim N(0,\sigma^2I)$<br><strong>Find the numerical solution for the elastic net in the form:</strong><br>$$\hat{\beta_{en}} &#x3D; argmin_b \frac{1}{2} |Y-Xb|<em>2^2 + \lambda\biggl(\frac{1}{2}(1-\alpha)|b|<em>2^2 + \alpha\sum\limits</em>{i&#x3D;1}^p|b_i| \biggr)$$<br>$$\hat{\beta</em>{en}} &#x3D; argmin_b \frac{1}{2} |Y-Xb|_2^2 + \lambda\biggl(\frac{1}{2}(1-\alpha)|b|<em>2^2 + \alpha\sum\limits</em>{i&#x3D;1}^p|b_i| \biggr)$$</p>
+<ul>
+<li><strong>What would be the value of the elastic net estimator with $\lambda &#x3D; 1$ and $\alpha &#x3D; 0.5$ if  $\hat{\beta}_{OLS} &#x3D; 3?$</strong></li>
+<li><strong>How does the number of discoveries depend on the parameter $\alpha$</strong></li>
+<li><strong>Provide the numerical value for the expected number of false discoveries when $n &#x3D; p &#x3D; 1000$, $p_0 &#x3D; 950$, $\sigma &#x3D; 1$, and $\lambda &#x3D; 2$ , and the power of detection of $X_1$ when $\beta_1 &#x3D; 3$</strong></li>
+</ul>
 
 </article>
     
@@ -468,8 +471,24 @@
 
             
 
+    <div id="post-toc" class="trm-post-toc">
+      <div class="trm-post-toc-header">
+        Article table of contents
+				<span id="post-toc-top">
+					TOP
+				</span>
+      </div>
+      <div class="trm-post-toc-content">
+        <ol class="trm-toc"><li class="trm-toc-item trm-toc-level-3" title="Problem 1"><a rel="nofollow" class="trm-toc-link" href="#Problem-1"><span class="trm-toc-number">1.</span> <span class="trm-toc-text">Problem 1</span></a></li></ol>
+      </div>
+    </div>
+
             
 <div class="trm-fixed-container">
+    
+        <div class="trm-fixed-btn post-toc-btn" data-title="Open toc">
+            <i class="iconfont fas fa-th-list"></i>
+        </div>
     
     
         <div class="trm-fixed-btn" data-title="Read Mode" onclick="asyncFun.switchReadMode()">
@@ -548,29 +567,6 @@
     
 
     <!-- 数学公式 -->
-    
-        
-<script src="https://unpkg.com/katex@latest/dist/katex.min.js" data-swup-reload-script></script>
-
-        
-            
-<script src="https://unpkg.com/katex@latest/dist/contrib/copy-tex.min.js" data-swup-reload-script></script>
-
-        
-        
-<script src="https://unpkg.com/katex@latest/dist/contrib/auto-render.min.js" data-swup-reload-script></script>
-
-        <script data-swup-reload-script>
-              window.renderMathInElement(document.body, {
-                delimiters: [
-                    { left: '$$', right: '$$', display: true },
-                    { left: '$', right: '$', display: false },
-                    { left: '\\(', right: '\\)', display: false },
-                    { left: '\\[', right: '\\]', display: true },
-                ],
-                ...{},
-            })
-        </script>
     
 
     <!-- 评论插件 -->
