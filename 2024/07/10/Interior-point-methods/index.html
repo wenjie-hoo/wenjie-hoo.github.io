@@ -1,605 +1,963 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="x5-fullscreen" content="true">
-<meta name="full-screen" content="yes">
-<meta name="theme-color" content="#317EFB" />
-<meta content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0" name="viewport">
-<meta name="description" content="Problem 1Assume the linear model:$$ Y &#x3D; X \beta + \epsilon$$where $X’X&#x3D;I$ and $\epsilon \sim N(0,\sigma^2I)$Find the numerical solution for the elastic net in the form:$$\hat{\beta_{en}} &amp;#x">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="keywords" content="hello world">
+    
+    <meta name="author" content="Clark">
+    
+    <!-- Completely eliminate flash of wrong theme -->
+    <script>
+        (function() {
+            const THEME_KEY = "REDEFINE-THEME-STATUS";
+            const DARK = "dark", LIGHT = "light";
+            
+            // Get preferred theme
+            function getTheme() {
+                try {
+                    const saved = localStorage.getItem(THEME_KEY);
+                    if (saved) {
+                        const { isDark } = JSON.parse(saved);
+                        return isDark ? DARK : LIGHT;
+                    }
+                } catch (e) {}
+                
+                return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
+            }
+            
+            // Apply theme to document
+            function applyTheme(theme) {
+                const isDark = theme === DARK;
+                const root = document.documentElement;
+                
+                // Set classes for compatibility
+                root.classList.add(theme);
+                root.classList.remove(isDark ? LIGHT : DARK);
+                root.style.colorScheme = theme;
+            }
+            
+            // Initial application
+            const theme = getTheme();
+            applyTheme(theme);
+            
+            // Listen for system preference changes
+            matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ({ matches }) => {
+                // Only update if using system preference (no localStorage entry)
+                if (!localStorage.getItem(THEME_KEY)) {
+                    applyTheme(matches ? DARK : LIGHT);
+                }
+            });
+            
+            // Set body classes ASAP (before DOMContentLoaded)
+            (function() {
+                const addBodyClass = () => {
+                    const b = document.body;
+                    if (!b) return false;
+                    b.classList.add(theme + "-mode");
+                    return true;
+                };
+
+                // Try immediately
+                if (addBodyClass()) return;
+
+                // Observe until body exists
+                const mo = new MutationObserver(() => {
+                    if (addBodyClass()) mo.disconnect();
+                });
+                mo.observe(document.documentElement, { childList: true, subtree: true });
+            })();
+        })();
+    </script>
+    
+    <!-- preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    
+    <!--- Seo Part-->
+    
+    <link rel="canonical" href="http://example.com/2024/07/10/interior-point-methods/"/>
+    <meta name="robots" content="index,follow">
+    <meta name="googlebot" content="index,follow">
+    <meta name="revisit-after" content="1 days">
+    
+    
+    
+        
+        <meta name="description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linear Programming - Interior-Point Methods">
 <meta property="og:url" content="http://example.com/2024/07/10/Interior-point-methods/index.html">
 <meta property="og:site_name" content="Clark&#39;s Blog">
-<meta property="og:description" content="Problem 1Assume the linear model:$$ Y &#x3D; X \beta + \epsilon$$where $X’X&#x3D;I$ and $\epsilon \sim N(0,\sigma^2I)$Find the numerical solution for the elastic net in the form:$$\hat{\beta_{en}} &amp;#x">
+<meta property="og:description" content="Hexo Theme Redefine, Redefine Your Hexo Journey.">
 <meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/images/redefine-og.webp">
 <meta property="article:published_time" content="2024-07-09T22:34:53.000Z">
-<meta property="article:modified_time" content="2024-08-02T12:30:49.454Z">
+<meta property="article:modified_time" content="2026-01-04T14:57:11.940Z">
 <meta property="article:author" content="Clark">
 <meta property="article:tag" content="math">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/redefine-og.webp">
+    
+    
+    <!--- Icon Part-->
+    <link rel="icon" type="image/png" href="/images/apple-touch-icon.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+    <meta name="theme-color" content="#A31F34">
+    <link rel="shortcut icon" href="/images/apple-touch-icon.png">
+    <!--- Page Info-->
+    
+    <title>
+        
+            Linear Programming - Interior-Point Methods | Clark&#39;s Blog
+        
+    </title>
 
-    <meta name="keywords" content="hello world">
+    
+<link rel="stylesheet" href="/fonts/Chillax/chillax.css">
 
 
-<title >Linear Programming - Interior-Point Methods</title>
+    <!--- Inject Part-->
+    
 
-<!-- Favicon -->
-
-    <link href='/img/favicon.ico?v=0.0.0' rel='icon' type='image/png' sizes='16x16' ></link>
-
-
-    <link href='/img/favicon.ico?v=0.0.0' rel='icon' type='image/png' sizes='32x32' ></link>
-
-
-
-
-<!-- Plugin -->
-
-
+    
+<link rel="stylesheet" href="/css/style.css">
 
 
     
-<link rel="stylesheet" href="/css/plugins/bootstrap.row.css">
+        
+<link rel="stylesheet" href="/css/build/tailwind.css">
 
     
-<link rel="stylesheet" href="https://unpkg.com/@fancyapps/ui@4.0/dist/fancybox.css">
 
     
-    
-
-
-
-
-<!-- Icon -->
+<link rel="stylesheet" href="/fonts/GeistMono/geist-mono.css">
 
     
-<link rel="stylesheet" href="/css/plugins/font-awesome.min.css">
+<link rel="stylesheet" href="/fonts/Geist/geist.css">
 
-
-
-
-<!-- Variable -->
-<script>window.ASYNC_CONFIG = {"hostname":"example.com","author":"Clark","root":"/","typed_text":["今天的天氣怎麼樣？"],"theme_version":"0.0.0","theme":{"switch":true,"default":"auto"},"favicon":{"logo":"/img/favicon.png","icon16":"/img/favicon.ico","icon32":"/img/favicon.ico","apple_touch_icon":null,"webmanifest":null,"visibilitychange":true,"hidden":"/img/favicon.png","show_text":"(/≧▽≦/)Hey! Good again!","hide_text":"(●—●)Oh, crash!"},"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}.","hits":"${hits} results found","hits_time":"${hits} results found in ${time} ms","author":"Post author: ","copyright_link":"Post link: ","copyright_license_title":"Copyright Notice: ","copyright_license_content":"All articles in this blog are licensed under undefined unless otherwise stated.","copy_success":"Copied","copy_failure":"Copy failed","open_read_mode":"Enter reading mode","exit_read_mode":"Exit reading mode","notice_outdate_message":"It has been undefined days since the last update, the content of the article may be outdated.","sticky":"TOP","just":"Just","min":"minutes ago","hour":"hours ago","day":"days ago","month":"months ago"},"swup":false,"plugin":{"flickr_justified_gallery":"https://unpkg.com/flickr-justified-gallery@latest/dist/fjGallery.min.js"},"icons":{"sun":"far fa-sun","moon":"far fa-moon","play":"fas fa-play","email":"far fa-envelope","next":"fas fa-arrow-right","calendar":"far fa-calendar-alt","clock":"far fa-clock","user":"far fa-user","back_top":"fas fa-arrow-up","close":"fas fa-times","search":"fas fa-search","reward":"fas fa-hand-holding-usd","user_tag":"fas fa-user-alt","toc_tag":"fas fa-th-list","read":"fas fa-book-reader","arrows":"fas fa-arrows-alt-h","double_arrows":"fas fa-angle-double-down","copy":"fas fa-copy"},"icontype":"font","highlight":{"plugin":"highlighjs","theme":true,"copy":true,"lang":true,"title":"default","height_limit":false},"toc":{"post_title":true},"live_time":{"start_time":"07/01/2024 00:00:00","prefix":"The blog has been lovely to run undefined day"},"danmu":{"enable":false,"el":".trm-banner"},"search":{"enable":true,"type":"local","href":"https://www.google.com/search?q=site:","domain":null,"path":"search.json"}};</script>
-<script id="async-page-config">window.PAGE_CONFIG = {"isPost":true,"isHome":false,"postUpdate":"2024-08-02 14:30:49"};</script>
-
-<!-- Theme mode css -->
-<link data-swup-theme rel="stylesheet" href="/css/index.css?v=0.0.0" id="trm-switch-style">
-<script>
-    let defaultMode = ASYNC_CONFIG.theme.default !=='auto' ?  ASYNC_CONFIG.theme.default : (window.matchMedia("(prefers-color-scheme: light)").matches ? 'style-light' : 'style-dark')
-    let catchMode = localStorage.getItem('theme-mode') || defaultMode;
-    let type = catchMode === 'style-dark' ? 'add' : 'remove';
-    document.documentElement.classList[type]('dark')
-</script>
-
-<!-- CDN -->
-
-
+    <!--- Font Part-->
+    
+    
+    
+    
+        <link href="" rel="stylesheet">
+    
     
     
 
+    <script id="hexo-configurations">
+    window.config = {"hostname":"example.com","root":"/","language":"en","path":"search.json"};
+    window.theme = {"articles":{"style":{"font_size":"16px","line_height":1.5,"image_border_radius":"14px","image_alignment":"center","image_caption":false,"link_icon":true,"delete_mask":false,"title_alignment":"left","headings_top_spacing":{"h1":"3.2rem","h2":"2.4rem","h3":"1.9rem","h4":"1.6rem","h5":"1.4rem","h6":"1.3rem"}},"word_count":{"enable":true,"count":true,"min2read":true},"author_label":{"enable":true,"auto":false,"list":[]},"code_block":{"copy":true,"style":"mac","highlight_theme":{"light":"github","dark":"vs2015"},"font":{"enable":false,"family":null,"url":null}},"toc":{"enable":true,"max_depth":3,"number":false,"expand":true,"init_open":true},"copyright":{"enable":true,"default":"cc_by_nc_sa"},"lazyload":true,"pangu_js":false,"recommendation":{"enable":false,"title":"推荐阅读","limit":3,"mobile_limit":2,"placeholder":"/images/wallhaven-wqery6-light.webp","skip_dirs":[]}},"colors":{"primary":"#A31F34","secondary":null,"default_mode":"light"},"global":{"fonts":{"chinese":{"enable":false,"family":null,"url":null},"english":{"enable":true,"family":null,"url":null},"title":{"enable":false,"family":null,"url":null}},"content_max_width":"1000px","sidebar_width":"210px","hover":{"shadow":true,"scale":false},"scroll_progress":{"bar":false,"percentage":true},"website_counter":{"url":"https://cn.vercount.one/js","enable":true,"site_pv":true,"site_uv":true,"post_pv":true},"single_page":true,"preloader":{"enable":false,"custom_message":null},"side_tools":{"gear_rotation":true,"auto_expand":false},"open_graph":{"enable":true,"image":"/images/redefine-og.webp","description":"Hexo Theme Redefine, Redefine Your Hexo Journey."},"google_analytics":{"enable":false,"id":null}},"home_banner":{"enable":true,"style":"fixed","image":{"light":"/images/wallhaven-wqery6-light.webp","dark":"/images/wallhaven-wqery6-dark.webp"},"title":"The best people in life are free.","subtitle":{"text":[],"hitokoto":{"enable":false,"show_author":false,"api":"https://v1.hitokoto.cn"},"typing_speed":100,"backing_speed":80,"starting_delay":500,"backing_delay":1500,"loop":true,"smart_backspace":true},"text_color":{"light":"#fff","dark":"#d1d1b6"},"text_style":{"title_size":"2.8rem","subtitle_size":"1.5rem","line_height":1.2},"custom_font":{"enable":false,"family":null,"url":null},"social_links":{"enable":true,"style":"default","links":{"github":"https://github.com/wenjie-hoo","instagram":"https://www.instagram.com/clark_hoo/","zhihu":"https://www.zhihu.com/people/clark0712","weixin":null,"email":"wenjie.hoo@outlook.com"},"qrs":{"weixin":null}}},"plugins":{"feed":{"enable":false},"aplayer":{"enable":false,"type":"fixed","audios":[{"name":null,"artist":null,"url":null,"cover":null,"lrc":null}]},"mermaid":{"enable":false,"version":"11.4.1"}},"version":"2.8.5","navbar":{"auto_hide":false,"color":{"left":"#f78736","right":"#367df7","transparency":35},"width":{"home":"1200px","pages":"1000px"},"links":{"Home":{"path":"/","icon":"fa-regular fa-house"},"Archives":{"path":"/archives","icon":"fa-regular fa-archive"},"About":{"icon":"fa-regular fa-user","submenus":{"Me":"/about","Github":"https://github.com/wenjie-hoo"}}},"search":{"enable":true,"preload":true}},"page_templates":{"friends_column":2,"tags_style":"blur"},"home":{"sidebar":{"enable":true,"position":"left","first_item":"menu","announcement":null,"show_on_mobile":true,"links":{"Archives":{"path":"/archives","icon":"fa-regular fa-archive"},"Tags":{"path":"/tags","icon":"fa-regular fa-tags"}}},"article_date_format":"auto","excerpt_length":200,"categories":{"enable":true,"limit":3},"tags":{"enable":true,"limit":3}},"footerStart":"2022/8/17 11:45:14"};
+    window.lang_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+    window.data = {"masonry":false};
+  </script>
+    
+    <!--- Fontawesome Part-->
+    
+<link rel="stylesheet" href="/fontawesome/fontawesome.min.css">
 
+    
+<link rel="stylesheet" href="/fontawesome/brands.min.css">
 
-<!-- Site Analytics -->
+    
+<link rel="stylesheet" href="/fontawesome/solid.min.css">
 
- 
+    
+<link rel="stylesheet" href="/fontawesome/regular.min.css">
+
+    
+    
+    
+    
 <meta name="generator" content="Hexo 7.2.0"></head>
 
+
+
 <body>
+	<div class="progress-bar-container">
+	
 
-  <!-- app wrapper -->
-  <div class="trm-app-frame">
-
-    <!-- page preloader -->
-    <div class="trm-preloader">
-    <div class="trm-holder">
-        <div class="preloader">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
-    </div>
+	
+	<span class="pjax-progress-bar"></span>
+	<!--        <span class="swup-progress-icon">-->
+	<!--            <i class="fa-solid fa-circle-notch fa-spin"></i>-->
+	<!--        </span>-->
+	
 </div>
-    <!-- page preloader end -->
 
-    <!-- change mode preloader -->
-    <div class="trm-mode-swich-animation-frame">
-    <div class="trm-mode-swich-animation">
-        <i class="i-sun"><i class="iconfont far fa-sun"></i></i>
-        <div class="trm-horizon"></div>
-        <i class="i-moon"><i class="iconfont far fa-moon"></i></i>
-    </div>
-</div>
-    <!-- change mode preloader end -->
+<main class="page-container" id="swup">
 
-      <!-- scroll container -->
-      <div id="trm-dynamic-content" class="trm-swup-animation">
-        <div id="trm-scroll-container" class="trm-scroll-container" style="opacity: 0">
-            <!-- top bar -->
-            <header class="trm-top-bar">
-	<div class="container">
-		<div class="trm-left-side">
-			<!-- logo -->
-<a href="/" class="trm-logo-frame trm-anima-link">
-    
-        <img alt="logo" src="/img/favicon.png">
-    
-    
-        <div class="trm-logo-text">
-            Clark&#39;s<span>Blog</span>
+	
+
+	<div class="main-content-container flex flex-col justify-between min-h-dvh">
+		<div class="main-content-header">
+			<header class="navbar-container px-6 md:px-12">
+    <div class="navbar-content transition-navbar ">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                
+                Clark&#39;s Blog
+                
+            </a>
         </div>
-    
-</a>
-<!-- logo end -->
-		</div>
-		<div class="trm-right-side">
-			<!-- menu -->
-<div class="trm-menu">
-    <nav>
-        <ul>
-            
-            <li class="menu-item-has-children ">
-                <a  href="/" target="">
-                    Home
-                </a>
-                
-            </li>
-            
-            <li class="menu-item-has-children ">
-                <a data-no-swup href="#" target="">
-                    Archives
-                </a>
-                
-                <ul>
+
+        <div class="right">
+            <!-- PC -->
+            <div class="desktop">
+                <ul class="navbar-list">
                     
-                    <li>
-                        <a  href="/archives/" target="">
-                            year
-                        </a>
-                    </li>
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/"
+                                        >
+                                    <i class="fa-regular fa-house fa-fw"></i>
+                                    HOME
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
                     
-                    <li>
-                        <a  href="/categories/tech/" target="">
-                            Tech
-                        </a>
-                    </li>
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class=""
+                                   href="/archives"
+                                        >
+                                    <i class="fa-regular fa-archive fa-fw"></i>
+                                    ARCHIVES
+                                    
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                            </li>
                     
-                    <li>
-                        <a  href="/categories/travel/" target="">
-                            travel
-                        </a>
-                    </li>
+                        
+                            
+
+                            <li class="navbar-item">
+                                <!-- Menu -->
+                                <a class="has-dropdown"
+                                   href="#"
+                                        onClick=&#34;return false;&#34;>
+                                    <i class="fa-regular fa-user fa-fw"></i>
+                                    ABOUT
+                                    <i class="fa-solid fa-chevron-down fa-fw"></i>
+                                </a>
+
+                                <!-- Submenu -->
+                                
+                                    <ul class="sub-menu">
+                                        
+                                            <li>
+                                                <a href="/about">
+                                                    ME
+                                                </a>
+                                            </li>
+                                        
+                                            <li>
+                                                <a target="_blank" rel="noopener" href="https://github.com/wenjie-hoo">
+                                                    GITHUB
+                                                </a>
+                                            </li>
+                                        
+                                    </ul>
+                                
+                            </li>
                     
-                    <li>
-                        <a  href="/categories/thought/" target="">
-                            thought
-                        </a>
-                    </li>
                     
-                    <li>
-                        <a  href="/categories/math/" target="">
-                            math
-                        </a>
-                    </li>
+                        <li class="navbar-item search search-popup-trigger">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </li>
                     
                 </ul>
+            </div>
+            <!-- Mobile -->
+            <div class="mobile">
                 
-            </li>
-            
-            <li class="menu-item-has-children ">
-                <a  href="/gallery/" target="">
-                    Gallery
-                </a>
-                
-            </li>
-            
-            <li class="menu-item-has-children ">
-                <a  href="/about/" target="">
-                    About
-                </a>
-                
-            </li>
-            
-        </ul>
-    </nav>
-</div>
-<!-- menu end -->
-			
-    <!-- mode switcher place -->
-    <div class="trm-mode-switcher-place">
-        <div class="trm-mode-switcher">
-            <i class="iconfont far fa-sun"></i>
-            <input class="tgl tgl-light" id="trm-swich" type="checkbox">
-            <label class="trm-swich" for="trm-swich"></label>
-            <i class="iconfont far fa-moon"></i>
-        </div>
-    </div>
-    <!-- mode switcher place end -->
-
-			
-    
-    <div id="trm-search-btn" class="trm-search-btn">
-        <i class="iconfont fas fa-search"></i>
-    </div>
-     
-
-		</div>
-		<div class="trm-menu-btn">
-			<span></span>
-		</div>
-	</div>
-</header>
-            <!-- top bar end -->
-
-            <!-- body -->
-            
-<div class="trm-content-start">
-    <!-- banner -->
-    <div class="trm-banner">
-    
-    <!-- banner video cover -->
-    <video autoplay="autoplay" loop muted playsinline webkit-playinginline class="trm-banner-cover">
-        <source src="https://videos.pexels.com/video-files/857251/857251-hd_1620_1080_25fps.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
-        Your browser does not support HTML5 video.
-    </video>
-    <!-- banner video cover end -->
-    
-
-    <!-- banner content -->
-    <div class="trm-banner-content trm-overlay">
-        <div class="container">
-            <div class="row">
-                
-                <div class="col-lg-12">
-
-                    <!-- banner title -->
-                    <div class="trm-banner-text trm-text-center ">
-                        <div class="trm-label trm-mb-20">
-                            NEWS LETTER
-                        </div>
-                        <h1 class="trm-mb-30 trm-hsmb-font">
-                            Linear Programming - Interior-Point Methods
-                        </h1>
-
-                        
-                            <ul class="trm-breadcrumbs trm-label">
-                                <li>
-                                    <a href="/" class="trm-anima-link">Home</a>
-                                </li>
-                                <li>
-                                    <span>
-                                        2024
-                                    </span>
-                                </li>
-                            </ul>
-                        
+                    <div class="icon-item search search-popup-trigger"><i class="fa-solid fa-magnifying-glass"></i>
                     </div>
-                    <!-- banner title end -->
-
-                    <!-- scroll hint -->
-                    <span id="scroll-triger" class="trm-scroll-hint-frame">
-                        <div class="trm-scroll-hint"></div>
-                        <span class="trm-label">Scroll down</span>
-                    </span>
-                    <!-- scroll hint end -->
-
+                
+                <div class="icon-item navbar-bar">
+                    <div class="navbar-bar-middle"></div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- banner content end -->
-</div>
-    <!-- banner end -->
-    <div class="container">
-        <div class="row">
+
+    <!-- Mobile sheet -->
+    <div class="navbar-drawer h-dvh w-full absolute top-0 left-0 bg-background-color flex flex-col justify-between">
+        <ul class="drawer-navbar-list flex flex-col px-4 justify-center items-start">
             
-            <div class="trm-page-content col-lg-12">
-                <div id="trm-content" class="trm-content">
-                    <div class="trm-post-info row hidden-sm">
-    <div class="col-sm-4">
-        <div class="trm-card trm-label trm-label-light text-center">
-            <i class="iconfont far fa-calendar-alt trm-icon"></i><br>
-            2024/07/10
-        </div>
-    </div>
-    <div class="col-sm-4">
-        <div class="trm-card trm-label trm-label-light text-center">
-            <i class="iconfont far fa-clock trm-icon"></i><br>
-            00:34
-        </div>
-    </div>
-    <div class="col-sm-4">
-        <div id="post-author" class="trm-card trm-label trm-label-light text-center">
-            <i class="iconfont far fa-user trm-icon"></i><br>
-            Clark
-        </div>
-    </div>
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/"
+                        >
+                            <span>
+                                HOME
+                            </span>
+                            
+                                <i class="fa-regular fa-house fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                           href="/archives"
+                        >
+                            <span>
+                                ARCHIVES
+                            </span>
+                            
+                                <i class="fa-regular fa-archive fa-sm fa-fw"></i>
+                            
+                        </a>
+                        
+
+                        
+                    </li>
+            
+                
+                    
+
+                    <li class="drawer-navbar-item-sub text-base my-1.5 flex flex-col w-full">
+                        
+                        <div class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary cursor-pointer text-2xl font-semibold group border-b border-border-color hover:border-primary w-full "
+                             navbar-data-toggle="submenu-About"
+                        >
+                            <span>
+                                ABOUT
+                            </span>
+                            
+                                <i class="fa-solid fa-chevron-right fa-sm fa-fw transition-all"></i>
+                            
+                        </div>
+                        
+
+                        
+                            <div class="flex-col items-start px-2 py-2 hidden" data-target="submenu-About">
+                                
+                                    <div class="drawer-navbar-item text-base flex flex-col justify-center items-start hover:underline active:underline hover:underline-offset-1 rounded-3xl">
+                                        <a class=" text-third-text-color text-xl"
+                                           href="/about">ME</a>
+                                    </div>
+                                
+                                    <div class="drawer-navbar-item text-base flex flex-col justify-center items-start hover:underline active:underline hover:underline-offset-1 rounded-3xl">
+                                        <a class=" text-third-text-color text-xl"
+                                           target="_blank" rel="noopener" href="https://github.com/wenjie-hoo">GITHUB</a>
+                                    </div>
+                                
+                            </div>
+                        
+                    </li>
+            
+
+            
+            
+                
+                    
+                    
+                    <li class="drawer-navbar-item text-base my-1.5 flex flex-col w-full">
+                        <a class="py-1.5 px-2 flex flex-row items-center justify-between gap-1 hover:!text-primary active:!text-primary text-2xl font-semibold group border-b border-border-color hover:border-primary w-full active"
+                           href="/tags"
+                        >
+                            <span>Tags</span>
+                            <i class="fa-regular fa-tags fa-sm fa-fw"></i>
+                        </a>
+                    </li>
+                
+            
+        </ul>
+
+        <div class="statistics flex justify-around my-2.5">
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/tags">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">4</div>
+        <div class="label text-third-text-color text-sm">Tags</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/categories">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">4</div>
+        <div class="label text-third-text-color text-sm">Categories</div>
+    </a>
+    <a class="item tag-count-item flex flex-col justify-center items-center w-20" href="/archives">
+        <div class="number text-2xl sm:text-xl text-second-text-color font-semibold">7</div>
+        <div class="label text-third-text-color text-sm">Posts</div>
+    </a>
 </div>
-<div class="trm-card ">
-    <article id="article-container" class="trm-publication">
-    <h3 id="Problem-1"><a href="#Problem-1" class="headerlink" title="Problem 1"></a>Problem 1</h3><p><strong>Assume the linear model:</strong><br>$$ Y &#x3D; X \beta + \epsilon$$<br>where $X’X&#x3D;I$ and $\epsilon \sim N(0,\sigma^2I)$<br><strong>Find the numerical solution for the elastic net in the form:</strong><br>$$\hat{\beta_{en}} &#x3D; argmin_b \frac{1}{2} |Y-Xb|<em>2^2 + \lambda\biggl(\frac{1}{2}(1-\alpha)|b|<em>2^2 + \alpha\sum\limits</em>{i&#x3D;1}^p|b_i| \biggr)$$<br>$$\hat{\beta</em>{en}} &#x3D; argmin_b \frac{1}{2} |Y-Xb|_2^2 + \lambda\biggl(\frac{1}{2}(1-\alpha)|b|<em>2^2 + \alpha\sum\limits</em>{i&#x3D;1}^p|b_i| \biggr)$$</p>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+		</div>
+
+		<div class="main-content-body transition-fade-up">
+			
+
+			<div class="main-content">
+				<div class="post-page-container flex relative justify-between box-border w-full h-full">
+	<div class="article-content-container">
+
+		<div class="article-title relative w-full">
+			
+			
+			
+			<img src="https://quantum-computing.lehigh.edu/wp-content/uploads/2020/02/Screenshot-2020-02-24-10.43.24.png" alt="Linear Programming - Interior-Point Methods" class="w-full h-60 sm:h-72 md:h-80 object-cover sm:rounded-t-large dark:brightness-75" />
+			
+			<div class="w-full flex items-center absolute bottom-0 justify-start">
+				<h1 class="article-title-cover text-center mx-6 my-6 text-second-text-color bg-background-color-transparent px-4 py-3 text-3xl sm:text-4xl md:text-5xl font-semibold backdrop-blur-lg rounded-xl border border-border-color ">Linear Programming - Interior-Point Methods</h1>
+			</div>
+			
+		</div>
+
+		
+		<div class="article-header flex flex-row gap-2 items-center px-2 sm:px-6 md:px-8">
+			<div class="avatar w-[46px] h-[46px] flex-shrink-0 rounded-medium border border-border-color p-[1px]">
+				<img src="/images/apple-touch-icon.png">
+			</div>
+			<div class="info flex flex-col justify-between">
+				<div class="author flex items-center">
+					<span class="name text-default-text-color text-lg font-semibold">Clark</span>
+					
+					<span class="author-label ml-1.5 text-xs px-2 py-0.5 rounded-small text-third-text-color border border-shadow-color-1">Lv1</span>
+					
+				</div>
+				<div class="meta-info">
+					<div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fa-regular fa-pen-fancy"></i>&nbsp;
+        <span class="desktop">2024-07-10 00:34:53</span>
+        <span class="mobile">2024-07-10 00:34:53</span>
+        <span class="hover-info">Created</span>
+    </span>
+    
+        <span class="article-date article-meta-item">
+            <i class="fa-regular fa-wrench"></i>&nbsp;
+            <span class="desktop">2026-01-04 15:57:11</span>
+            <span class="mobile">2026-01-04 15:57:11</span>
+            <span class="hover-info">Updated</span>
+        </span>
+    
+
+    
+        <span class="article-categories article-meta-item">
+            <i class="fa-regular fa-folders"></i>&nbsp;
+            <ul>
+                
+                
+                    
+                        
+                        <li>
+                            <a href="/categories/math/">math</a>&nbsp;
+                        </li>
+                    
+                    
+                
+            </ul>
+        </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fa-regular fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/math/">math</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+        <span class="article-wordcount article-meta-item">
+            <i class="fa-regular fa-typewriter"></i>&nbsp;<span>170 Words</span>
+        </span>
+    
+    
+        <span class="article-min2read article-meta-item">
+            <i class="fa-regular fa-clock"></i>&nbsp;<span>1 Mins</span>
+        </span>
+    
+    
+        <span class="article-pv article-meta-item">
+            <i class="fa-regular fa-eye"></i>&nbsp;<span id="busuanzi_value_page_pv"></span>
+        </span>
+    
+</div>
+
+				</div>
+			</div>
+		</div>
+		
+
+		
+
+
+		<div class="article-content markdown-body px-2 sm:px-6 md:px-8 pb-8">
+			<h3 id="Problem-1"><a href="#Problem-1" class="headerlink" title="Problem 1"></a>Problem 1</h3><p><strong>Assume the linear model:</strong><br>$$ Y &#x3D; X \beta + \epsilon$$<br>where $X’X&#x3D;I$ and $\epsilon \sim N(0,\sigma^2I)$<br><strong>Find the numerical solution for the elastic net in the form:</strong><br>$$\hat{\beta_{en}} &#x3D; argmin_b \frac{1}{2} |Y-Xb|<em>2^2 + \lambda\biggl(\frac{1}{2}(1-\alpha)|b|<em>2^2 + \alpha\sum\limits</em>{i&#x3D;1}^p|b_i| \biggr)$$<br>$$\hat{\beta</em>{en}} &#x3D; argmin_b \frac{1}{2} |Y-Xb|_2^2 + \lambda\biggl(\frac{1}{2}(1-\alpha)|b|<em>2^2 + \alpha\sum\limits</em>{i&#x3D;1}^p|b_i| \biggr)$$</p>
 <ul>
 <li><strong>What would be the value of the elastic net estimator with $\lambda &#x3D; 1$ and $\alpha &#x3D; 0.5$ if  $\hat{\beta}_{OLS} &#x3D; 3?$</strong></li>
 <li><strong>How does the number of discoveries depend on the parameter $\alpha$</strong></li>
 <li><strong>Provide the numerical value for the expected number of false discoveries when $n &#x3D; p &#x3D; 1000$, $p_0 &#x3D; 950$, $\sigma &#x3D; 1$, and $\lambda &#x3D; 2$ , and the power of detection of $X_1$ when $\beta_1 &#x3D; 3$</strong></li>
 </ul>
 
-</article>
-    
-    
+		</div>
 
-</div>
-<div class="trm-post-next-prev row">
-    <div class="col-lg-12">
-        <!-- title -->
-        <h5 class="trm-title-with-divider">
-            Other Articles
-            <span data-number="02"></span>
-        </h5>
-    </div>
-    
-        <div class="col-lg-6">
-    <div class="trm-older-publications-card trm-scroll-animation trm-active-el">
-        <div class="trm-older-publication">
+		
+		<div class="post-copyright-info w-full my-8 px-2 sm:px-6 md:px-8">
+			<div class="article-copyright-info-container">
+    <ul>
+        <li><strong>Title:</strong> Linear Programming - Interior-Point Methods</li>
+        <li><strong>Author:</strong> Clark</li>
+        <li><strong>Created at
+                :</strong> 2024-07-10 00:34:53</li>
+        
+            <li>
+                <strong>Updated at
+                    :</strong> 2026-01-04 15:57:11
+            </li>
+        
+        <li>
+            <strong>Link:</strong> https://redefine.ohevan.com/2024/07/10/Interior-point-methods/
+        </li>
+        <li>
+            <strong>
+                License:
+            </strong>
             
-            <a class="trm-op-top trm-anima-link" href="/2024/07/11/Amsterdam/">
-                <span class="trm-op-cover">
-                    <img alt="cover" class="no-fancybox" src="https://s2.loli.net/2024/07/12/uTxB5ShZEYlA83C.jpg">
-                </span>
-                <h6 class="trm-op-title">阿姆斯特丹city tour</h6>
-            </a>
-            <div class="trm-divider trm-mb-15 trm-mt-20"></div>
-            <ul class="trm-card-data trm-label">
-                <li>2024/07/11</li>
-                <li>10:58</li>
-                <li>travel</li>
-            </ul>
-        </div>
-    </div>
-</div>
-    
-    
-        <div class="col-lg-6">
-    <div class="trm-older-publications-card trm-scroll-animation trm-active-el">
-        <div class="trm-older-publication">
+
             
-            <a class="trm-op-top trm-anima-link" href="/2023/12/31/%E9%BB%91%E5%B1%B1%E8%87%AA%E9%A9%BE%E6%B8%B8%E8%AE%B0-2023%E5%9C%A3%E8%AF%9E/">
-                <span class="trm-op-cover">
-                    <img alt="cover" class="no-fancybox" src="https://s2.loli.net/2023/12/30/gJLjhWwiH6vBmVY.jpg">
-                </span>
-                <h6 class="trm-op-title">黑山自驾游记 - 2023圣诞</h6>
-            </a>
-            <div class="trm-divider trm-mb-15 trm-mt-20"></div>
-            <ul class="trm-card-data trm-label">
-                <li>2023/12/31</li>
-                <li>20:50</li>
-                <li>travel</li>
-            </ul>
-        </div>
+                This work is licensed under <a class="license" target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0">CC BY-NC-SA 4.0</a>.
+            
+        </li>
+    </ul>
+</div>
+
+		</div>
+		
+
+		
+		<ul class="post-tags-box text-lg mt-1.5 flex-wrap justify-center flex md:hidden">
+			
+			<li class="tag-item mx-0.5">
+				<a href="/tags/math/">#math</a>&nbsp;
+			</li>
+			
+		</ul>
+		
+
+		
+
+		
+		<div class="article-nav my-8 flex justify-between items-center px-2 sm:px-6 md:px-8">
+			
+			<div class="article-prev border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="prev" rel="prev" href="/2024/07/11/Amsterdam/">
+					<span class="left arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-left"></i>
+					</span>
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">阿姆斯特丹city tour</span>
+						<span class="post-nav-item">Prev posts</span>
+					</span>
+				</a>
+			</div>
+			
+			
+			<div class="article-next border-border-color shadow-redefine-flat shadow-shadow-color-2 rounded-medium px-4 py-2 hover:shadow-redefine-flat-hover hover:shadow-shadow-color-2">
+				<a class="next" rel="next" href="/2023/09/22/It-s-me-hi-I-m-the-problem-it-s-me/">
+					<span class="title flex justify-center items-center">
+						<span class="post-nav-title-item truncate max-w-48">It&#39;s me, hi, I&#39;m the problem, it&#39;s me</span>
+						<span class="post-nav-item">Next posts</span>
+					</span>
+					<span class="right arrow-icon flex justify-center items-center">
+						<i class="fa-solid fa-chevron-right"></i>
+					</span>
+				</a>
+			</div>
+			
+		</div>
+		
+
+
+		
+		<div class="comment-container px-2 sm:px-6 md:px-8 pb-8">
+			<div class="comments-container mt-10 w-full ">
+    <div id="comment-anchor" class="w-full h-2.5"></div>
+    <div class="comment-area-title w-full my-1.5 md:my-2.5 text-xl md:text-3xl font-bold">
+        Comments
     </div>
-</div>
-    
-</div>
-
     
 
-    <div id="giscus-wrap" class="trm-card trm-scroll-animation comment-container"></div>
-<script data-swup-reload-script>
-    function loadGiscus() {
-        let nowTheme = document.documentElement.classList.contains('dark') ? 'transparent_dark' : 'light'
-        const config = {
-            src: 'https://giscus.app/client.js',
-            "data-repo": 'wenjie-hoo/magic-kangaroo',
-            "data-repo-id": 'R_kgDOMQKn2w',
-            "data-category": 'General',
-            "data-category-id": 'DIC_kwDOMQKn284Cgk3f',
-            "data-mapping": 'pathname',
-            "data-reactions-enabled": '1',
-            "data-emit-metadata": '0',
-            "data-theme": nowTheme,
-            "data-lang": 'en',
-            crossorigin: "anonymous",
-            async: true
-        }
-        let ele = document.createElement('script')
-        for (let key in config) {
-            ele.setAttribute(key, config[key])
-        }
-        document.getElementById('giscus-wrap').insertAdjacentElement('afterbegin', ele)
-    }
+        
+            
+    <div id="waline"></div>
+    <script type="module" data-swup-reload-script>
+      import { init } from '/js/libs/waline.js';
 
-    function changeGiscusTheme() {
-        let theme = document.documentElement.classList.contains('dark') ? 'transparent_dark' : 'light'
-
-        function sendMessage(message) {
-            const iframe = document.querySelector('iframe.giscus-frame');
-            if (!iframe) return;
-            iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
-        }
-
-        sendMessage({
-            setConfig: {
-                theme: theme
-            }
+      function loadWaline() {
+        init({
+          el: '#waline',
+          serverURL: 'https://example.example.com',
+          dark: 'body[class~="dark-mode"]',
+          reaction: false,
+          requiredMeta: ['nick', 'mail'],
+          emoji: [],
+                    lang: 'zh-CN',
         });
-    }
+      }
 
-    loadGiscus();
+      if (typeof swup !== 'undefined') {
+        loadWaline();
+      } else {
+        window.addEventListener('DOMContentLoaded', loadWaline);
+      }
+    </script>
+
+
+
+        
+    
+</div>
+
+		</div>
+		
+	</div>
+
+	
+	<div class="toc-content-container">
+		<div class="post-toc-wrap">
+	<div class="post-toc">
+		<div class="toc-title">On this page</div>
+		<div class="page-title">Linear Programming - Interior-Point Methods</div>
+		<ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Problem-1"><span class="nav-text">Problem 1</span></a></li></ol>
+
+	</div>
+</div>
+	</div>
+	
+</div>
+			</div>
+
+			
+		</div>
+
+		<div class="main-content-footer">
+			<footer class="footer mt-5 py-5 h-auto text-base text-third-text-color relative border-t-2 border-t-border-color">
+    <div class="info-container py-3 text-center">
+        
+        <div class="text-center">
+            &copy;
+            
+              <span>2022</span>
+              -
+            
+            2026&nbsp;&nbsp;<i class="fa-solid fa-heart fa-beat" style="--fa-animation-duration: 0.5s; color: #f54545"></i>&nbsp;&nbsp;<a href="/">Clark</a>
+            
+                
+                <p class="post-count space-x-0.5">
+                    <span>
+                        7 posts in total
+                    </span>
+                    
+                        <span>
+                            3.2k words in total
+                        </span>
+                    
+                </p>
+            
+        </div>
+        
+            <script data-swup-reload-script src="https://cn.vercount.one/js"></script>
+            <div class="relative text-center lg:absolute lg:right-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-right">
+                
+                    <span id="busuanzi_container_site_uv" class="lg:!block">
+                        <span class="text-sm">VISITOR COUNT</span>
+                        <span id="busuanzi_value_site_uv"></span>
+                    </span>
+                
+                
+                    <span id="busuanzi_container_site_pv" class="lg:!block">
+                        <span class="text-sm">TOTAL PAGE VIEWS</span>
+                        <span id="busuanzi_value_site_pv"></span>
+                    </span>
+                
+            </div>
+        
+        <div class="relative text-center lg:absolute lg:left-[20px] lg:top-1/2 lg:-translate-y-1/2 lg:text-left">
+            <span class="lg:block text-sm">POWERED BY <?xml version="1.0" encoding="utf-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg class="relative top-[2px] inline-block align-baseline" version="1.1" id="圖層_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1rem" height="1rem" viewBox="0 0 512 512" enable-background="new 0 0 512 512" xml:space="preserve"><path fill="#0E83CD" d="M256.4,25.8l-200,115.5L56,371.5l199.6,114.7l200-115.5l0.4-230.2L256.4,25.8z M349,354.6l-18.4,10.7l-18.6-11V275H200v79.6l-18.4,10.7l-18.6-11v-197l18.5-10.6l18.5,10.8V237h112v-79.6l18.5-10.6l18.5,10.8V354.6z"/></svg><a target="_blank" class="text-base" href="https://hexo.io">Hexo</a></span>
+            <span class="text-sm lg:block">THEME&nbsp;<a class="text-base" target="_blank" href="https://github.com/EvanNotFound/hexo-theme-redefine">Redefine v2.8.5</a></span>
+        </div>
+        
+        
+            <div>
+                Blog up for <span class="odometer" id="runtime_days" ></span> days <span class="odometer" id="runtime_hours"></span> hrs <span class="odometer" id="runtime_minutes"></span> Min <span class="odometer" id="runtime_seconds"></span> Sec
+            </div>
+        
+        
+            <script data-swup-reload-script>
+                try {
+                    function odometer_init() {
+                    const elements = document.querySelectorAll('.odometer');
+                    elements.forEach(el => {
+                        new Odometer({
+                            el,
+                            format: '( ddd).dd',
+                            duration: 200
+                        });
+                    });
+                    }
+                    odometer_init();
+                } catch (error) {}
+            </script>
+        
+        
+        
+    </div>  
+</footer>
+		</div>
+	</div>
+
+	
+	<div class="post-tools">
+		<div class="post-tools-container">
+	<ul class="article-tools-list">
+		<!-- TOC aside toggle -->
+		
+		<li class="right-bottom-tools page-aside-toggle">
+			<i class="fa-regular fa-outdent"></i>
+		</li>
+		
+
+		<!-- go comment -->
+		
+		<li class="go-comment">
+			<i class="fa-regular fa-comments"></i>
+		</li>
+		
+	</ul>
+</div>
+	</div>
+	
+
+	<div class="right-side-tools-container">
+		<div class="side-tools-container">
+	<ul class="hidden-tools-list">
+		<li class="right-bottom-tools tool-font-adjust-plus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-plus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-font-adjust-minus flex justify-center items-center">
+			<i class="fa-regular fa-magnifying-glass-minus"></i>
+		</li>
+
+		<li class="right-bottom-tools tool-dark-light-toggle flex justify-center items-center">
+			<i class="fa-regular fa-moon"></i>
+		</li>
+
+		<!-- rss -->
+		
+
+		
+
+		<li class="right-bottom-tools tool-scroll-to-bottom flex justify-center items-center">
+			<i class="fa-regular fa-arrow-down"></i>
+		</li>
+	</ul>
+
+	<ul class="visible-tools-list">
+		<li class="right-bottom-tools toggle-tools-list flex justify-center items-center">
+			<i class="fa-regular fa-cog fa-spin"></i>
+		</li>
+		
+		<li class="right-bottom-tools tool-scroll-to-top flex justify-center items-center">
+			<i class="arrow-up fas fa-arrow-up"></i>
+			<span class="percent"></span>
+		</li>
+		
+		
+	</ul>
+</div>
+	</div>
+
+	<div class="image-viewer-container">
+	<img src="">
+</div>
+
+	
+	<div class="search-pop-overlay">
+	<div class="popup search-popup">
+		<div class="search-header">
+			<span class="search-input-field-pre">
+				<i class="fa-solid fa-keyboard"></i>
+			</span>
+			<div class="search-input-container">
+				<input autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Search..." spellcheck="false" type="search" class="search-input">
+			</div>
+			<span class="popup-btn-close">
+				<i class="fa-solid fa-times"></i>
+			</span>
+		</div>
+		<div id="search-result">
+			<div id="no-result">
+				<i class="fa-solid fa-spinner fa-spin-pulse fa-5x fa-fw"></i>
+			</div>
+		</div>
+	</div>
+</div>
+	
+
+</main>
+
+
+
+<script src="/js/build/libs/Swup.min.js"></script>
+
+<script src="/js/build/libs/SwupSlideTheme.min.js"></script>
+
+<script src="/js/build/libs/SwupScriptsPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupProgressPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupScrollPlugin.min.js"></script>
+
+<script src="/js/build/libs/SwupPreloadPlugin.min.js"></script>
+
+<script>
+    const swup = new Swup({
+        plugins: [
+            new SwupScriptsPlugin({
+                optin: true,
+            }),
+            new SwupProgressPlugin(),
+            new SwupScrollPlugin({
+                offset: 80,
+            }),
+            new SwupSlideTheme({
+                mainElement: ".main-content-body",
+            }),
+            new SwupPreloadPlugin(),
+        ],
+        containers: ["#swup"],
+    });
 </script>
 
 
 
-                    <div class="trm-divider footer-divider"></div>
 
-                    <!-- footer -->
-                    <footer class="trm-footer-card trm-scroll-animation">
+	
+<script src="/js/build/tools/imageViewer.js" type="module"></script>
+
+<script src="/js/build/utils.js" type="module"></script>
+
+<script src="/js/build/main.js" type="module"></script>
+
+<script src="/js/build/layouts/navbarShrink.js" type="module"></script>
+
+<script src="/js/build/tools/scrollTopBottom.js" type="module"></script>
+
+<script src="/js/build/tools/lightDarkSwitch.js" type="module"></script>
+
+<script src="/js/build/layouts/categoryList.js" type="module"></script>
+
+
 
     
+<script src="/js/build/tools/localSearch.js" type="module"></script>
+
+
+
 
     
-        <div class="trm-footer-item">
-            <span>© 2024- 2024</span>
-            <span class="footer-separator"data-separator=" · "></span>
-            <span class="trm-accent-color">Wenjie Hu</span>
-        </div>
-    
+<script src="/js/build/tools/codeBlock.js" type="module"></script>
 
-      
+
+
 
     
-        <div class="trm-footer-item blog-run-long"></div>
-     
+<script src="/js/build/layouts/lazyload.js" type="module"></script>
 
-     
-</footer>
-                    <!-- footer end -->
 
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-            <!-- body end -->
 
-            
 
-    <div id="post-toc" class="trm-post-toc">
-      <div class="trm-post-toc-header">
-        Article table of contents
-				<span id="post-toc-top">
-					TOP
-				</span>
-      </div>
-      <div class="trm-post-toc-content">
-        <ol class="trm-toc"><li class="trm-toc-item trm-toc-level-3" title="Problem 1"><a rel="nofollow" class="trm-toc-link" href="#Problem-1"><span class="trm-toc-number">1.</span> <span class="trm-toc-text">Problem 1</span></a></li></ol>
-      </div>
-    </div>
+    
+<script src="/js/build/tools/runtime.js"></script>
 
-            
-<div class="trm-fixed-container">
     
-        <div class="trm-fixed-btn post-toc-btn" data-title="Open toc">
-            <i class="iconfont fas fa-th-list"></i>
-        </div>
+<script src="/js/build/libs/odometer.min.js"></script>
+
     
-    
-        <div class="trm-fixed-btn" data-title="Read Mode" onclick="asyncFun.switchReadMode()">
-            <i class="iconfont fas fa-book-reader"></i>
-        </div>
-    
-    
-    <div id="trm-back-top" class="trm-fixed-btn" data-title="Back To Top">
-        <i class="iconfont fas fa-arrow-up"></i>
-    </div>
-</div>
-        </div>
-      </div>
-      <!-- scroll container end -->
-  </div>
-  <!-- app wrapper end -->
+<link rel="stylesheet" href="/assets/odometer-theme-minimal.css">
+
+
+
 
   
-    <div class="trm-search-popup">
-        <div class="trm-search-wrapper">
-            <div class="form trm-search-form">
-                <div class="trm-search-input-icon">
-                    <i class="iconfont fas fa-search"></i>
-                </div>
-                <input class="trm-search-input" type="text" placeholder="Searching...">
-                <div class="trm-search-btn-close">
-                    <i class="iconfont fas fa-times"></i>
-                </div>
-            </div>
-            <div class="trm-search-result-container">
-                <div class="trm-search-empty">
-                    Please enter keywords to search
-                </div>
-            </div>
-            <div class="trm-search-footer">
-                <div class="trm-search-stats"></div>
-                <ul class="trm-search-commands">
-                    <li>
-                        <kbd class="command-palette-commands-key">
-                            <svg width="15" height="15" aria-label="Escape key" role="img">
-                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                    stroke-width="1.2">
-                                    <path
-                                        d="M13.6167 8.936c-.1065.3583-.6883.962-1.4875.962-.7993 0-1.653-.9165-1.653-2.1258v-.5678c0-1.2548.7896-2.1016 1.653-2.1016.8634 0 1.3601.4778 1.4875 1.0724M9 6c-.1352-.4735-.7506-.9219-1.46-.8972-.7092.0246-1.344.57-1.344 1.2166s.4198.8812 1.3445.9805C8.465 7.3992 8.968 7.9337 9 8.5c.032.5663-.454 1.398-1.4595 1.398C6.6593 9.898 6 9 5.963 8.4851m-1.4748.5368c-.2635.5941-.8099.876-1.5443.876s-1.7073-.6248-1.7073-2.204v-.4603c0-1.0416.721-2.131 1.7073-2.131.9864 0 1.6425 1.031 1.5443 2.2492h-2.956">
-                                    </path>
-                                </g>
-                            </svg>
-                        </kbd>
-                        <span class="command-palette-Label">to close</span>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
+<script src="/js/build/libs/Typed.min.js"></script>
 
-  <!-- Plugin -->
+  
+<script src="/js/build/plugins/typed.js" type="module"></script>
+
+
+
+
 
 
 
 
     
-    
-<script src="https://unpkg.com/@fancyapps/ui@4.0/dist/fancybox.umd.js"></script>
-
-    
-
-    
-        <script src="/js/plugins/typing.js?v=0.0.0"></script>
-    
-
-    
-        
-<script src="https://unpkg.com/hexo-generator-searchdb@1.4.0/dist/search.js"></script>
-
-        <script src="/js/plugins/local_search.js?v=0.0.0"></script>
-    
-
-    <!-- 数学公式 -->
-    
-
-    <!-- 评论插件 -->
-    
-        
-
-        
-    
-
-		
+<script src="/js/build/libs/anime.min.js"></script>
 
 
 
-
-    <!-- Service Worker -->
-    
-    <!-- baidu push -->
-    
-
-
-<script id="async-script" src="/js/main.js?v=0.0.0"></script>
-
-<!-- CDN -->
 
 
     
+<script src="/js/build/tools/tocToggle.js" type="module" data-swup-reload-script=""></script>
 
-    
+<script src="/js/build/layouts/toc.js" type="module" data-swup-reload-script=""></script>
 
-    
+<script src="/js/build/plugins/tabs.js" type="module" data-swup-reload-script=""></script>
 
 
 
+
+<script src="/js/build/libs/moment-with-locales.min.js" data-swup-reload-script=""></script>
+
+
+<script src="/js/build/layouts/essays.js" type="module" data-swup-reload-script=""></script>
+
+
+
+
+
+	
 </body>
 
 </html>
